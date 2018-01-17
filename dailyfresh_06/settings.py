@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 
-from django.conf.global_settings import STATICFILES_DIRS, DATABASE_ROUTERS, AUTH_USER_MODEL
+# from django.conf.global_settings import STATICFILES_DIRS, DATABASE_ROUTERS, AUTH_USER_MODEL
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -116,7 +116,7 @@ DATABASE_ROUTERS = ['utils.db_routers.MasterSlaveRouter']
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/
 
-LANGUAGE_CODE = 'zh-Hans'
+LANGUAGE_CODE = 'zh-hans'
 
 TIME_ZONE = 'Asia/Shanghai'
 
@@ -136,8 +136,8 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 # Email
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.126.com'
-EMAIL_PORT = 25
-EMAIL_HOST_USER = 'daily_fresh@126.com'
-EMAIL_HOST_PASSWORD = 'ITCAST123'
-EMAIL_FROM = '天天生鲜<daily_fresh@126.com>'
+EMAIL_HOST = 'smtp.qq.com'
+EMAIL_PORT = 465
+EMAIL_HOST_USER = 'aleoyang@foxmail.com'
+EMAIL_HOST_PASSWORD = 'dwlavyrbahlmcajg'
+EMAIL_FROM = '天天生鲜<aleoyang@foxmail.com>'
