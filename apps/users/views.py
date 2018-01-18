@@ -11,6 +11,9 @@ from users.models import User
 from celery_task.tasks import send_active_email
 from utils import constants
 # from django.core.mail import send_mail
+from django.contrib.auth import authenticate, login, logout
+from utils.commons import LoginRequiredMixin
+from .modesl import Address
 
 # Create your views here.
 
@@ -29,6 +32,7 @@ from utils import constants
 
 class RegisterView(View):
     """注册类视图"""
+
     def get(self, request):
         """对应get请求方式的逻辑"""
         return render(request, "register.html")
@@ -93,6 +97,7 @@ class RegisterView(View):
 
 class UserActiveView(View):
     """用户激活视图"""
+
     def get(self, request, user_token):
         """
         用户激活
@@ -125,29 +130,101 @@ class UserActiveView(View):
 
 
 class LoginView(View):
-   """提供登录页面"""
-   
-   # 登录处理，获取参数
+    """提供登录页面"""
 
-   # 校验参数，判断是否为空
+    def get(self, request):
+        return render(request, "login.html")
 
-   # 判断是否正确，直接用django的认证系统，不正确返回登录页面
+        # 登录处理，获取参数
 
-   # 判断激活状态
+    def post(self, request):
+        user_name = request.POST.get("username")
+        password = request.POST.get("pwd")
+        # 校验参数，判断是否为空
+        if not all([user_name, password]):
+            return render(request, "login.html", {"errmsg": "用户名或密码不能为空"})
 
-   # 使用django的认证系统记录用户登录
+        # 判断是否正确，直接用django的认证系统，不正确返回登录页面
+        user = authenticate(username=user_name, password=password)
+        if user is None:
+            # 认证失败
+            return render(request, "login.html", {"errmsg": "用户名或密码错误"})
+        # 判断激活状态
+        if user.is_active is False:
+            return render(request, "login.html", {"errmsg": "用户未激活"})
+        # 使用django的认证系统记录用户登录
+        login(request, user)
+        # 判断用户是否勾选记住登录用户名
+        remember = request.POST.get("remember")
+        if remember == "on":
+            # 表示勾选了记录用户名
+            # 设置session有效期, None表示使用django的默认session有效期
+            request.session.set_expiry(None)
+        else:
+            # 表示未勾选，浏览器关闭即失效
+            request.session.set_expiry(0)
+        # 从查询字符串中尝试获取next的参数
+        next = request.GET.get("next")
+        if next is None:
+            next = reverse("goods:index")
+        # 登录成功后定向到主页面
+        return redirect(next)
 
-   # 判断用户是否勾选记住登录用户名
 
-   # 登录成功后定向到主页面
+class LogoutView(View):
+    """用logout退出登录"""
+    def get(self, request):
+    # 清除用户的登录数据 session
+    # 使用django自带认证系统的退出
+        logout(request)
 
-   # 用logout退出登录，并充定向到主页
-
-   # 用户地址，提供地址页面数据
-
-   # 保存用户地址数据
-
-
-
+    # 退出后，引导到登录页面
+        return redirect(reverse("users:login"))
 
 
+
+# 用户地址，提供地址页面数据
+
+# 保存用户地址数据
+class AddressView(LoginRequiredMixin, View):
+    """用户地址"""
+    def get(self, request):
+        """提供地址页面数据"""
+        # 查询数据库，获取用户的地址信息
+        # 当前请求的用户
+        user = request.user
+        try:
+            address = user.address_set.latest("update_time")
+        except Address.DoesNotExist:
+            # 表示数据库中没有这个用户地址数据
+            address = None
+        return render(request, "user_center_site.html", {"address": address})
+
+    def post(self, request):
+        """保存用户地址数据"""
+        user = request.user
+
+        try:
+            address = user.address_set.latest("update_time")
+        except Address.DoesNotExist:
+            # 表示数据库中没有这个用户地址数据
+            address = None
+
+        receiver_name = request.POST.get("receiver_name")
+        new_detail_address = request.POST.get("address")
+        zip_code = request.POST.get("zip_code")
+        mobile = request.POST.get("mobile")
+
+        if not all([receiver_name, new_detail_address, zip_code, mobile]):
+            return render(request, "user_center_site.html", {"address":address})
+
+
+        Address.objects.create(
+            user=user,
+            receiver_name=receiver_name,
+            receiver_mobile=mobile,
+            detail_addr=new_detail_address,
+            zip_code=zip_code
+        )
+
+        return redirect(reverse("users:address"))
