@@ -44,6 +44,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'tinymce', # 富文本编辑器
     'users',
     'goods',
     'orders',
@@ -141,3 +142,35 @@ EMAIL_PORT = 465
 EMAIL_HOST_USER = 'aleoyang@foxmail.com'
 EMAIL_HOST_PASSWORD = 'dwlavyrbahlmcajg'
 EMAIL_FROM = '天天生鲜<aleoyang@foxmail.com>'
+
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://192.168.162.130',
+        'OPTIONS':{
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
+
+# 被django的login_required装饰使用的参数，登录的网页网址
+LOGIN_URL = 'users/login'
+
+# FastDFS客户段的配置文件路径
+FASTDFS_CLIENT_CONF = os.path.join(BASE_DIR, 'utils/fastdfs_storage/client.conf')
+
+FASTDFS_NGINX_URL = 'HTTP://192.168.162.130/'
+
+# 指明django使用的默认文件存储系统
+DEFAULT_FILE_STORAGE = 'utils.fastdfs_storage.storage.FastDFSStorage'
+
+# tinymce 富文本编辑器的配置参数
+TINYMCE_DEFAULT_CONFIG = {
+    'theme': 'advanced',
+    'width': 600,
+    'height': 400,
+}

@@ -13,7 +13,10 @@ from utils import constants
 # from django.core.mail import send_mail
 from django.contrib.auth import authenticate, login, logout
 from utils.commons import LoginRequiredMixin
-from .modesl import Address
+from .models import Address
+from django_redis import get_redis_connection
+from goods.models import GoodsSKU
+
 
 # Create your views here.
 
@@ -228,3 +231,40 @@ class AddressView(LoginRequiredMixin, View):
         )
 
         return redirect(reverse("users:address"))
+
+
+class UserInfoView(LoginRequiredMixin, View):
+    """用户基本信息页面"""
+    def get(self, request):
+        """提供页面"""
+        user = request.user
+        # 查看基本信息
+        try:
+            address = user.address_set.latest("update_time")
+        except Address.DoesNotExist:
+            # 表示数据库中没有这个用户地址数据
+            address = None
+
+        # 查看历史记录， redis
+        # 获取django_redis 提供的redis连接对象
+        redis_conn = get_redis_connection("default")
+
+        # 浏览历史记录在redis中以列表保存
+        redis_key = "history_%s" % user.id
+        sku_id_list = redis_conn.lrange(redis_key, 0, 4)
+
+        # 根据sku_id查询商品信息
+        # select * from df_goods_sku_where id in (1,2,3,4)
+        sku_obj_list = GoodsSKU.objects.filter(id_in=sku_id_list)
+
+        sku_obj_list = []
+        for sku_id in sku_id_list:
+            sku = GoodsSKU.objects.get(id=sku_id)
+            sku_obj_list.append(sku)
+
+        context = {
+            "address": address,
+            "skus": sku_obj_list
+        }
+        # 返回
+        return render(request, "user_center_info.html", context)
